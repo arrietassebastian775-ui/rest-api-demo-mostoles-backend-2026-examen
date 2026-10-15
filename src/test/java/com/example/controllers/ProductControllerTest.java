@@ -1,5 +1,8 @@
 package com.example.controllers;
 
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
@@ -462,6 +465,82 @@ class ProductControllerTest {
                 .andExpect(status().isOk());
 
     }
+
+	@Test
+	@DisplayName("Controller Test products-by-presentation con un usuario NO autenticado")
+	void testProductsByPresentationSinAutenticar() throws Exception {
+
+		// when / then: sin cabecera Authorization se espera 401 (Unauthorized)
+		mockMvc.perform(get("/products/products-by-presentation")
+				.param("presentation", "unidad")
+				.accept(MediaType.APPLICATION_JSON))
+			.andDo(print())
+			.andExpect(status().isUnauthorized());
+
+		// El servicio no debe haberse invocado: la peticion se corta en la seguridad
+		verify(productService, never()).findByPresentationName(anyString());
+	}
+
+	/**
+	 * Lanzar este test desde la terminal, en la raiz del proyecto, con maven:
+	 * 
+	 * mvn test -Dtest=ProductControllerTest#testProductsByPresentationUsuarioRegistrado
+	 * 
+	 * Con el wrapper del proyecto (Linux/Mac):
+	 * ./mvnw test -Dtest=ProductControllerTest#testProductsByPresentationUsuarioRegistrado
+	 * 
+	 * Con el wrapper del proyecto (Windows):
+	 * mvnw.cmd test -Dtest=ProductControllerTest#testProductsByPresentationUsuarioRegistrado
+	 */
+	@Test
+	@DisplayName("Controller Test products-by-presentation con un usuario registrado")
+	void testProductsByPresentationUsuarioRegistrado() throws Exception {
+
+		// given
+		Presentation unidad = Presentation.builder()
+				.name("unidad")
+				.description("por unidades")
+				.build();
+		unidad.setId(1);
+
+		Product papel = Product.builder()
+				.name("rezma de papel")
+				.description("Description")
+				.price(new BigDecimal("3.75"))
+				.stock(10)
+				.presentation(unidad)
+				.build();
+		papel.setId(1);
+
+		Product guitarra = Product.builder()
+				.name("guitarra de juguete")
+				.description("Description")
+				.price(new BigDecimal("4.5"))
+				.stock(5)
+				.presentation(unidad)
+				.build();
+		guitarra.setId(3);
+
+		given(productService.findByPresentationName("unidad")).willReturn(List.of(papel, guitarra));
+
+		// when / then: con el token de user1 (ROLE_USER) se espera 200 y los productos
+		mockMvc.perform(get("/products/products-by-presentation")
+				.param("presentation", "unidad")
+				.accept(MediaType.APPLICATION_JSON)
+				.header("Authorization", this.userToken))
+			.andDo(print())
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$._embedded.productList.size()", is(2)))
+			.andExpect(jsonPath("$._embedded.productList[0].name", is("rezma de papel")))
+			.andExpect(jsonPath("$._embedded.productList[0].presentation.name", is("unidad")))
+			.andExpect(jsonPath("$._embedded.productList[1].name", is("guitarra de juguete")))
+			.andExpect(jsonPath("$._embedded.productList[1].presentation.name", is("unidad")))
+			.andExpect(jsonPath("$._links.self.href",
+					containsString("/products/products-by-presentation")))
+			// un USER no debe ver los enlaces de mutacion
+			.andExpect(jsonPath("$._embedded.productList[0]._links.update").doesNotExist());
+	
+	}
 	
 }
 

@@ -329,6 +329,33 @@ public class ProductController {
 				.header(HttpHeaders.LINK, allProductsLink.toString()).body(resource);
 	}
 
+		/**
+	 * (EXAMEN) Responde a una peticion (request) del tipo:
+	 * 
+	 * http://localhost:8080/products/products-by-presentation?presentation=unidad
+	 * 
+	 * Devuelve todos los productos de la presentacion cuyo nombre se recibe como
+	 * parametro de la peticion. Es requerido: si no se suministra, Spring responde
+	 * 400 (Bad Request) automaticamente.
+	 */
+	@GetMapping("/products-by-presentation")
+	@PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
+	public ResponseEntity<CollectionModel<Product>> productsByPresentation(
+			@RequestParam(name = "presentation", required = true) String presentation) {
+
+		List<Product> products = productService.findByPresentationName(presentation);
+
+		// El ensamblador anade a cada producto sus enlaces HATEOAS
+		List<Product> productModels = products.stream().map(productModelAssembler::toModel).toList();
+
+		// El self de la coleccion apunta a ESTE endpoint (no a /products)
+		CollectionModel<Product> collectionModel = CollectionModel.of(productModels,
+				linkTo(methodOn(ProductController.class).productsByPresentation(presentation)).withSelfRel(),
+				linkTo(methodOn(ProductController.class).dameProductos(null, null)).withRel("all-products"));
+
+		return new ResponseEntity<>(collectionModel, HttpStatus.OK);
+	}
+
 	/**
 	 * Metodo que actualiza (update) un producto dado el id del mismo.
 	 * 

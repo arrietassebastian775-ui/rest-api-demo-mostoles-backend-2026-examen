@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.example.entities.Product;
 
@@ -53,4 +54,10 @@ public interface ProductDao extends JpaRepository<Product, Integer> {
     // recupera el producto con su presentacion correspondiente
     @Query(value = "select p from Product p left join fetch p.presentation where p.id = :id")
     public Product findById(int id);
+
+    // Metodo 4 (EXAMEN) Recupera todos los productos de una presentacion concreta, 
+    // que se recibe como parametro, y los ordena por nombre
+   @Query("select p from Product p join fetch p.presentation pr "
+            + "where pr.name = :presentation order by p.name")
+   public List<Product> findByPresentationName(@Param("presentation") String presentation);
 }
