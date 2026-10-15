@@ -466,7 +466,17 @@ class ProductControllerTest {
 
     }
 
-	
+	/**
+	 * Lanzar este test desde la terminal, en la raiz del proyecto, con maven:
+	 * 
+	 * mvn test -Dtest=ProductControllerTest#testProductsByPresentationSinAutenticar
+	 * 
+	 * Con el wrapper del proyecto (Linux/Mac):
+	 * ./mvnw test -Dtest=ProductControllerTest#testProductsByPresentationSinAutenticar
+	 * 
+	 * Con el wrapper del proyecto (Windows):
+	 * mvnw.cmd test -Dtest=ProductControllerTest#testProductsByPresentationSinAutenticar
+	 */
 	@Test
 	@DisplayName("Controller Test products-by-presentation con un usuario NO autenticado")
 	void testProductsByPresentationSinAutenticar() throws Exception {
